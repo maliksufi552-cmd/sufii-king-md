@@ -1,11 +1,13 @@
 import makeWASocket, { useMultiFileAuthState, makeCacheableSignalKeyStore } from "@whiskeysockets/baileys";
 import fs from "fs";
-import path from "path";
+import pino from "pino";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -28,35 +30,24 @@ export default async function handler(req, res) {
     const sock = makeWASocket({
       auth: {
         creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, console.log),
+        keys: makeCacheableSignalKeyStore(state.keys, pino({level:"silent"}).child({})),
       },
       printQRInTerminal: false,
       browser: ["SUFI-KING-MD", "Chrome", "1.0"],
-      logger: { level: "silent" },
+      logger: pino({ level: "silent" }),
     });
 
     sock.ev.on("creds.update", saveCreds);
 
-    // Wait for connection
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timeout")), 30000);
-      
-      sock.ev.on("connection.update", (update) => {
-        if (update.qr) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-    });
-
     if (!sock.authState.creds.registered) {
+      await new Promise(r => setTimeout(r, 1000));
       const code = await sock.requestPairingCode(cleanNum);
-      // Clean up after 1 min
+      
       setTimeout(() => {
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
       }, 60000);
       
-      return res.status(200).json({ code: code, status: "success" });
+      return res.status(200).json({ code: code });
     } else {
       return res.status(400).json({ error: "Already registered" });
     }
@@ -64,10 +55,6 @@ export default async function handler(req, res) {
   } catch (error) {
     console.log(error);
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-    return res.status(200).json({ 
-      code: null, 
-      error: error.message,
-      note: "Try again, WhatsApp server busy"
-    });
+    return res.status(200).json({ error: error.message });
   }
-      }
+}
