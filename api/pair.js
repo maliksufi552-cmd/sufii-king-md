@@ -12,9 +12,8 @@ export default async function handler(req, res) {
   if (!number) return res.status(400).json({ error: "Number missing" });
   
   const cleanNum = number.replace(/[^0-9]/g, "");
-  const tempDir = `/tmp/${cleanNum}`;
+  const tempDir = `/tmp/${cleanNum}-${Date.now()}`;
 
-  if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
   fs.mkdirSync(tempDir, { recursive: true });
 
   try {
@@ -23,22 +22,33 @@ export default async function handler(req, res) {
       auth: state,
       printQRInTerminal: false,
       logger: pino({ level: "silent" }),
-      browser: Browsers.macOS("Desktop"),
+      browser: Browsers.ubuntu("Chrome"),
+      syncFullHistory: false,
     });
+    
     sock.ev.on("creds.update", saveCreds);
-    await delay(1500);
-    let code = await sock.requestPairingCode(cleanNum);
-    res.status(200).json({ code: code });
+    
+    // Vercel pe thora wait zaroori hai warna Couldn't link aata hai
+    await delay(4000);
+    
+    if (!sock.authState.creds.registered) {
+        let code = await sock.requestPairingCode(cleanNum);
+        // Code me - hata do taa k jaldi lag jaye
+        code = code?.match(/.{1,4}/g)?.join("-") || code;
+        res.status(200).json({ code: code });
+    }
 
     sock.ev.on("connection.update", async (u) => {
       if (u.connection === "open") {
-        await delay(3000);
+        await delay(5000);
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
         try { sock.end(); } catch {}
       }
     });
 
   } catch (e) {
+    console.log(e)
     if (!res.headersSent) res.status(500).json({ error: e.message });
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
   }
 }
