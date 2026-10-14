@@ -6,17 +6,16 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const number = req.method === "GET" ? req.query.number : req.body.number;
+  let number = req.query.number || req.body?.number;
+  if (!number) return res.status(400).json({ error: "Number missing" });
   
-  if (!number) return res.status(400).json({ error: "Number missing! Example: ?number=923218076693" });
-
   const cleanNum = number.replace(/[^0-9]/g, "");
-  const tempDir = `/tmp/${cleanNum}_${Date.now()}`;
+  const tempDir = `/tmp/${cleanNum}`;
 
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+  if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+  fs.mkdirSync(tempDir, { recursive: true });
 
   try {
     const { state, saveCreds } = await useMultiFileAuthState(tempDir);
@@ -24,22 +23,22 @@ export default async function handler(req, res) {
       auth: state,
       printQRInTerminal: false,
       logger: pino({ level: "silent" }),
-      browser: Browsers.macOS("Chrome"),
+      browser: Browsers.macOS("Desktop"),
+    });
+    sock.ev.on("creds.update", saveCreds);
+    await delay(1500);
+    let code = await sock.requestPairingCode(cleanNum);
+    res.status(200).json({ code: code });
+
+    sock.ev.on("connection.update", async (u) => {
+      if (u.connection === "open") {
+        await delay(3000);
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+        try { sock.end(); } catch {}
+      }
     });
 
-    if (!sock.authState.creds.registered) {
-      await delay(1500);
-      const code = await sock.requestPairingCode(cleanNum);
-      await delay(2000);
-      
-      // cleanup
-      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-      
-      return res.status(200).json({ code: code });
-    }
   } catch (e) {
-    console.log(e);
-    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-    return res.status(500).json({ error: "Failed to get code, try again", details: e.message });
+    if (!res.headersSent) res.status(500).json({ error: e.message });
   }
 }
