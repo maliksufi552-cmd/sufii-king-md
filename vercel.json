@@ -1,1 +1,7 @@
-{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{
+  "functions": {
+    "api/pair.js": {
+      "maxDuration": 60
+    }
+  }
+}
