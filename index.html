@@ -1,43 +1,55 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SUFII-KING MD - Pair Code</title>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUFII-KING-MD</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
-body{background:#0a0a12;color:#fff;min-height:100vh;display:flex;justify-content:center;padding:18px}
-.container{max-width:420px;width:100%}
-.card{background:#16162a;border:1px solid #2a2a4a;border-radius:24px;padding:26px;margin-top:10px}
-.logo{width:90px;height:90px;margin:0 auto;background:linear-gradient(135deg,#7c5cff,#4a3cff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:45px}
-h1{text-align:center;margin:16px 0 4px;font-size:32px;color:#8b7cff;font-weight:900}
-.sub{text-align:center;color:#8a8aa8;margin-bottom:22px}
-.server-box{background:#1d1d34;border:1px solid #2e2e55;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.info{background:#102a28;border:1px solid #1a4a44;border-radius:16px;padding:14px;color:#9abeb8;font-size:14px;margin-bottom:18px}
-.input-box{background:#1d1d34;border:1px solid #2e2e55;border-radius:14px;display:flex;align-items:center;padding:0 14px}
-.input-box input{background:transparent;border:none;color:#fff;padding:16px 10px;width:100%;font-size:18px;outline:none}
-button{width:100%;background:linear-gradient(90deg,#7c5cff,#4a3cff);border:none;color:#fff;padding:16px;border-radius:14px;font-size:17px;font-weight:700;margin-top:16px}
-.code-box{margin-top:20px;background:#0f0f1e;border:2px solid #7c5cff;border-radius:16px;padding:16px;text-align:center;display:none}
-.code-box .c{font-size:34px;letter-spacing:6px;font-weight:800}
-</style></head><body>
-<div class="container"><div class="card">
+body{background:#0f0f1a;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+.card{background:#1a1a2e;padding:30px;border-radius:20px;text-align:center;width:90%;max-width:400px;box-shadow:0 0 20px #000}
+.logo{width:80px;height:80px;background:#6c5ce7;border-radius:50%;display:flex;justify-content:center;align-items:center;margin:0 auto 20px;font-size:40px}
+h1{color:#a29bfe;margin:0}
+input{width:90%;padding:15px;margin:20px 0;border-radius:10px;border:none;background:#2d2d44;color:white;font-size:18px;text-align:center}
+button{width:100%;padding:15px;border-radius:10px;border:none;background:#6c5ce7;color:white;font-size:18px;font-weight:bold;cursor:pointer}
+#result{margin-top:20px;font-size:22px;font-weight:bold;color:#00ff88;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="card">
 <div class="logo">⚡</div>
 <h1>SUFII-KING-MD</h1>
-<p class="sub">Generate Your Pairing Code</p>
-<div class="server-box"><div style="font-size:13px">🗄️ <span style="color:#00ff88">● ACTIVE</span> 👥 LIMIT 50</div><select style="background:#2a2a4a;color:#fff;border-radius:8px;padding:6px 12px"><option>SUFII-KING V1</option></select></div>
-<div class="info">ℹ️ Select server, enter WhatsApp number, and click <b>Generate Pair Code</b></div>
-<label>WhatsApp Number</label>
-<div class="input-box">📞<input id="num" placeholder="923218076693" type="tel"></div>
-<button id="btn" onclick="gen()">⚡ Generate Pair Code</button>
-<div id="codeBox" class="code-box"><div id="code" class="c">--------</div><div style="font-size:12px;color:#ffeb3b;margin-top:8px">WhatsApp > Linked Devices > Link with phone number</div></div>
-</div></div>
+<p>Generate Your Pairing Code</p>
+<input type="text" id="number" placeholder="923218076693" value="923218076693">
+<button id="btn" onclick="generate()">⚡ Generate Pair Code</button>
+<div id="result"></div>
+</div>
 <script>
-async function gen(){
-const n=document.getElementById('num').value.trim();
-if(!n){alert('Number likho');return;}
-const btn=document.getElementById('btn');btn.innerText='Generating...';btn.disabled=true;
-try{
-const r=await fetch('/api/pair?number='+encodeURIComponent(n));
-const j=await r.json();
-if(j.code){document.getElementById('codeBox').style.display='block';document.getElementById('code').innerText=j.code;}
-else alert(j.error||'Error');}catch(e){alert(e.message)}
-btn.innerText='⚡ Generate Pair Code';btn.disabled=false;
+async function generate(){
+ const num = document.getElementById('number').value;
+ const btn = document.getElementById('btn');
+ const resDiv = document.getElementById('result');
+ if(!num){alert('Number dalo');return;}
+ btn.innerText='Generating...'; btn.disabled=true;
+ resDiv.innerText='';
+ try{
+  const response = await fetch('/api/pair', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({number: num})
+  });
+  const data = await response.json();
+  if(data.code){
+    resDiv.innerHTML = 'YOUR CODE:<br><span style="font-size:32px;letter-spacing:5px;">'+data.code+'</span><br><br>WhatsApp me ja ke Linked Device > Link with phone number > Code paste karo!';
+  }else if(data.error){
+    resDiv.innerText = 'Error: '+data.error;
+  }else{
+    resDiv.innerText = 'Error, try again';
+  }
+ }catch(e){
+  resDiv.innerText='Server Error: '+e.message;
+ }
+ btn.innerText='⚡ Generate Pair Code'; btn.disabled=false;
 }
-</script></body></html>
+</script>
+</body>
+</html>
