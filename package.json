@@ -1,1 +1,10 @@
-{"name":"sufii-king-md","version":"1.0.0","dependencies":{"@whiskeysockets/baileys":"latest","pino":"^8.0.0"}}
+{
+  "name": "sufii-king-md",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "pino": "^8.16.2",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
