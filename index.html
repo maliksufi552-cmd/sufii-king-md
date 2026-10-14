@@ -1,3 +1,33 @@
-<title>SUFI-KING-MD Pair Code</title>
-<h1 style="text-align:center">👑 SUFI-KING-MD 👑</h1>
-<h3 style="text-align:center">The Most Powerful WhatsApp Bot</h3>
+<!DOCTYPE html>
+<html>
+<head>
+<title>SUFI-KING-MD - Pair Code</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{background:#0a0a0a;color:white;font-family:Arial;text-align:center;padding-top:50px}
+.box{background:#1a1a1a;padding:30px;border-radius:15px;width:90%;max-width:400px;margin:auto;border:1px solid #ff00ff}
+input{width:90%;padding:12px;border-radius:8px;border:none;margin:10px 0}
+button{background:linear-gradient(90deg,#ff00ff,#8a2be2);color:white;padding:12px 30px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;width:100%}
+h1{color:#ff00ff}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>👑 SUFI-KING-MD 👑</h1>
+<p>Enter Your Number With Country Code</p>
+<input type="text" id="number" placeholder="923218076693">
+<button onclick="getCode()">GET PAIR CODE</button>
+<p id="result" style="margin-top:20px;font-size:20px;color:#00ff00"></p>
+</div>
+<script>
+async function getCode(){
+let num=document.getElementById('number').value;
+if(!num){alert('Number dalo!');return}
+document.getElementById('result').innerText='Wait...';
+let res=await fetch(`/api/pair?number=${num}`);
+let data=await res.json();
+document.getElementById('result').innerText=data.code || data.message || 'Error, check API';
+}
+</script>
+</body>
+</html>
